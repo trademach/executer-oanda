@@ -1,0 +1,10 @@
+{
+  "name": "trademach-executer-oanda",
+  "version": "0.0.0",
+  "main": "index.js",
+  "dependencies": {
+    "config": "^1.19.0",
+    "request": "^2.69.0",
+    "zmq": "^2.14.0"
+  }
+}
