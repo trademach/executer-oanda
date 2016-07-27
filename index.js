@@ -4,6 +4,8 @@ const config = require('config');
 const zmq = require('zmq');
 const request = require('request');
 
+const utils = require('./lib/utils');
+
 // configured constants
 const API = config.get('oanda.api');
 const ACCOUNT_ID = config.get('oanda.accountId');
@@ -20,7 +22,8 @@ function init() {
       socket.connect(config.get('mq.uri'));
       socket.subscribe(config.get('mq.topic'));
       socket.on('message', handleMessage);
-    });
+    })
+    .catch(console.error);
 }
 
 function handleMessage(topic, data) {
@@ -30,32 +33,24 @@ function handleMessage(topic, data) {
 }
 
 function getCurrentPositions() {
-  const requestOptions = {
-    url: `${API}/v1/accounts/${ACCOUNT_ID}/positions`,
-    headers: {
-      Authorization: `Bearer ${ACCESS_TOKEN}`
-    }
-  };
-
   return new Promise((resolve, reject) => {
-    request(requestOptions, (err, response, body) => {
-      if(err) return console.error(err);
+    utils.oanda.getPositions()
+      .then(data => {
+        data.positions.forEach(p => {
+          const instrument = p.instrument;
 
-      const data = JSON.parse(body);
+          if(p.side === 'buy') {
+            positions[instrument] = p.units;
 
-      data.positions.forEach(p => {
-        const instrument = p.instrument;
+          } else if(p.side === 'sell') {
+            positions[instrument] = -p.units;
+          }
+        });
 
-        if(p.side === 'buy') {
-          positions[instrument] = p.units;
-
-        } else if(p.side === 'sell') {
-          positions[instrument] = -p.units;
-        }
-      });
-
-      console.log(positions);
-    });
+        console.log('got current positions');
+        return resolve();
+      })
+      .catch(reject);
   });
 }
 
