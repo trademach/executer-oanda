@@ -28,8 +28,19 @@ function init() {
 
 function handleMessage(topic, data) {
   const message = JSON.parse(data);
+  const instrument = message.instrument;
+  const action = message.action;
 
-  console.log(message);
+  if(action === 'match') {
+    const newPosition = message.position;
+    const oldPosition = positions[instrument] || 0;
+    const units = newPosition - oldPosition;
+
+    positions[instrument] = newPosition;
+
+    console.log(`send order - ${units} ${instrument}`);
+    utils.oanda.createOrder(instrument, units);
+  }
 }
 
 function getCurrentPositions() {
